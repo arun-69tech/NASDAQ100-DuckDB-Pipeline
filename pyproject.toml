@@ -1,0 +1,25 @@
+[project]
+name = "nasdaq100-duckdb-pipeline"
+version = "0.1.0"
+description = "ETL pipeline for NASDAQ-100 daily OHLCV data using Alpha Vantage and DuckDB."
+requires-python = ">=3.12"
+
+[tool.black]
+line-length = 88
+target-version = ["py312"]
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "W"]
+ignore = []
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

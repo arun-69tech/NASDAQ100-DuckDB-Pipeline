@@ -1,0 +1,10 @@
+requests
+pandas
+duckdb
+python-dotenv
+tenacity
+boto3
+pytest
+black
+ruff
+isort
