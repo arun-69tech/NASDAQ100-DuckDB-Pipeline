@@ -1,0 +1,326 @@
+MarketVault Technical Reference
+===============================
+
+1. Project Name
+---------------
+
+MarketVault
+
+
+2. Project Purpose
+------------------
+
+MarketVault is a Python ETL project that collects daily OHLCV stock price data
+for NASDAQ-100 companies from the Alpha Vantage API, validates and transforms
+the data, stores it in DuckDB, and prepares database and CSV artifacts for
+upload to Amazon S3.
+
+DuckDB is the local master data store and single source of truth. CSV exports
+are generated from DuckDB, not directly from Alpha Vantage API responses.
+
+
+3. Tech Stack
+-------------
+
+Python
+  Main application language.
+
+DuckDB
+  Local analytical database used as the master data store.
+
+Alpha Vantage API
+  External market data provider for daily OHLCV prices.
+
+AWS Lambda
+  Planned runtime environment for scheduled production execution.
+
+Amazon S3
+  Planned storage location for DuckDB database, CSV exports, and logs.
+
+EventBridge
+  Planned scheduler for triggering the production pipeline.
+
+CloudWatch
+  Planned logging and monitoring destination for AWS execution.
+
+SNS
+  Planned notification service for failure alerts.
+
+Boto3
+  AWS SDK dependency available for future S3 upload integration.
+
+
+4. Project Structure
+--------------------
+
+config/
+  Runtime configuration, constants, and the NASDAQ-100 ticker CSV file.
+
+src/
+  Main Python application package.
+
+src/api/
+  Alpha Vantage API client and retry policy.
+
+src/database/
+  DuckDB connection management, schema creation, and UPSERT logic.
+
+src/models/
+  Domain models, including the StockPrice data model.
+
+src/pipeline/
+  ETL pipeline stages: extract, transform, load, orchestration, and CSV export.
+
+src/utils/
+  Shared helpers for logging, file loading, environment values, and timing.
+
+src/validators/
+  Data validation logic for converting API bars into clean domain objects.
+
+data/
+  Local runtime data directory. DuckDB files and generated exports are ignored
+  by Git.
+
+logs/
+  Local runtime log directory. Log files are ignored by Git.
+
+tests/
+  Test package placeholder for future pytest tests.
+
+docs/
+  Project design documentation.
+
+
+5. ETL Workflow
+---------------
+
+Alpha Vantage API
+  The pipeline requests daily OHLCV price data for configured tickers.
+
+Extract
+  The API layer fetches data ticker by ticker. One failed ticker does not stop
+  the rest of the run.
+
+Validate
+  API responses and individual records are checked for missing fields, invalid
+  numeric values, invalid dates, and empty payloads.
+
+Transform
+  Valid API bars are converted into StockPrice domain objects.
+
+DuckDB
+  Valid records are UPSERTed into the daily_prices table using ticker and date
+  as the primary key.
+
+Generate Daily CSV
+  CSV exports are generated from DuckDB after successful processing.
+
+Upload to Amazon S3
+  S3 upload is part of the planned AWS workflow. Infrastructure and deployment
+  code are intentionally outside the current Python implementation.
+
+
+6. Database
+-----------
+
+Database file:
+  data/marketvault.duckdb
+
+Purpose:
+  The DuckDB database is the local master data store and single source of
+  truth for downstream exports.
+
+daily_prices table:
+  Stores complete historical OHLCV data.
+
+  Key columns:
+    ticker
+    date
+    open
+    high
+    low
+    close
+    volume
+    fetched_at
+
+  Primary key:
+    ticker, date
+
+pipeline_runs table:
+  Stores ETL execution history.
+
+  Key columns:
+    run_id
+    run_date
+    start_time
+    end_time
+    duration_seconds
+    total_tickers
+    successful_tickers
+    failed_tickers
+    status
+    error_message
+
+
+7. CSV Export
+-------------
+
+Filename format:
+  US_NASDAQ100_YYYY-MM-DD.csv
+
+Example:
+  US_NASDAQ100_2026-06-20.csv
+
+Rules:
+  The CSV is generated from DuckDB.
+  The CSV is not generated directly from Alpha Vantage API responses.
+  The CSV is stored locally before upload to S3.
+  Generated CSV files are ignored by Git.
+
+Local export structure:
+  data/exports/csv/YYYY/MM/US_NASDAQ100_YYYY-MM-DD.csv
+
+
+8. AWS Workflow
+---------------
+
+The AWS workflow is planned production architecture. The current repository
+focuses on the Python application and does not include infrastructure code.
+
+EventBridge
+  Triggers the scheduled pipeline run.
+
+Lambda
+  Executes the Python ETL application.
+
+Run Pipeline
+  Fetches, validates, transforms, and loads market data into DuckDB.
+
+Upload DuckDB + CSV to S3
+  Stores production artifacts in the configured S3 bucket.
+
+CloudWatch Logs
+  Captures production runtime logs.
+
+SNS Notification
+  Sends failure notifications when production execution fails.
+
+Expected S3 layout:
+  marketvault-data/
+  database/
+  marketvault.duckdb
+
+  exports/
+  csv/
+  YYYY/
+  MM/
+  US_NASDAQ100_YYYY-MM-DD.csv
+
+  logs/
+  pipeline.log
+
+
+9. Environment Variables
+------------------------
+
+ALPHA_VANTAGE_API_KEY
+  Alpha Vantage API key used for market data requests.
+
+ALPHA_VANTAGE_BASE_URL
+  Alpha Vantage REST API endpoint.
+
+ALPHA_VANTAGE_TIMEOUT_SECONDS
+  HTTP timeout in seconds for Alpha Vantage requests.
+
+ALPHA_VANTAGE_OUTPUT_SIZE
+  Alpha Vantage response size. Typical values are compact or full.
+
+AWS_REGION
+  AWS region used by downstream AWS integrations.
+
+S3_BUCKET
+  S3 bucket name for production artifacts.
+
+DUCKDB_DATABASE_PATH
+  Local path to the DuckDB database file.
+
+TICKERS_FILE_PATH
+  Local path to the ticker input CSV file.
+
+LOG_LEVEL
+  Application logging level.
+
+LOG_FILE_PATH
+  Local path to the pipeline log file.
+
+MAX_RETRY_ATTEMPTS
+  Retry setting documented for pipeline configuration.
+
+RETRY_BACKOFF_SECONDS
+  Retry backoff setting documented for pipeline configuration.
+
+DATE_FORMAT
+  Standard date format used by the project configuration.
+
+TIMESTAMP_FORMAT
+  Standard timestamp format used by the project configuration.
+
+
+10. Local Run Instructions
+--------------------------
+
+Activate the virtual environment:
+  D:\Github Repo\.venv\Scripts\Activate.ps1
+
+Install requirements:
+  pip install -r requirements.txt
+
+Run the pipeline:
+  python -m src.main
+
+Before running:
+  Create a .env file from .env.example.
+  Set ALPHA_VANTAGE_API_KEY.
+  Confirm DUCKDB_DATABASE_PATH points to data/marketvault.duckdb.
+  Confirm TICKERS_FILE_PATH points to config/tickers.csv.
+
+
+11. Important Notes
+-------------------
+
+.env is never committed.
+
+DuckDB database files are ignored by Git.
+
+Generated CSV files are ignored by Git.
+
+Log files are ignored by Git.
+
+S3 stores production artifacts.
+
+AWS infrastructure is handled separately.
+
+The Python application should not hardcode secrets, AWS credentials, bucket
+names beyond documented configuration defaults, or API keys.
+
+Invalid ticker data should be logged and skipped without stopping the entire
+pipeline.
+
+
+12. Future Improvements
+-----------------------
+
+[ ] Add automated pytest coverage for configuration, validation, database, and
+    pipeline stages.
+
+[ ] Wire the CSV export stage into the main production pipeline flow.
+
+[ ] Add S3 upload implementation using boto3.
+
+[ ] Record pipeline run history automatically during normal pipeline execution.
+
+[ ] Add structured failure reporting for production SNS notifications.
+
+[ ] Add CI checks for formatting, linting, tests, and import validation.
+
+[ ] Add deployment documentation for the AWS runtime environment.

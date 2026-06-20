@@ -3,7 +3,6 @@
 Production-oriented Python ETL pipeline for fetching daily OHLCV data for NASDAQ-100 constituents from Alpha Vantage and storing deduplicated records in DuckDB.
 
 ## Features
-
 - Reads NASDAQ-100 tickers from `config/tickers.csv`
 - Fetches daily adjusted time series data from Alpha Vantage
 - Validates API-level and record-level data quality
