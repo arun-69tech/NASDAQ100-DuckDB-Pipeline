@@ -3,7 +3,7 @@
 from pathlib import Path
 
 from src.database.connection import duckdb_connection
-from src.database.schema import create_daily_prices_table
+from src.database.schema import create_application_tables
 from src.database.upsert import upsert_daily_prices
 from src.models.stock_price import StockPrice
 from src.utils.logger import get_logger
@@ -35,7 +35,7 @@ class PriceLoader:
             duckdb.Error: If database operations fail.
         """
         with duckdb_connection(self._database_path) as connection:
-            create_daily_prices_table(connection)
+            create_application_tables(connection)
             upserted_count = upsert_daily_prices(connection, stock_prices)
 
         LOGGER.info(

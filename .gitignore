@@ -21,6 +21,7 @@ env/
 # Data and logs
 data/*.duckdb
 data/*.wal
+data/exports/
 logs/*.log
 
 # IDE and OS
