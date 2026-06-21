@@ -1,6 +1,6 @@
 """Transformation stage for daily stock prices."""
 
-from src.api.alpha_vantage import AlphaVantageDailyBar
+from src.api.yahoo_finance import YahooFinanceDailyBar
 from src.models.stock_price import StockPrice
 from src.utils.logger import get_logger
 from src.validators.validator import StockPriceValidator
@@ -21,7 +21,7 @@ class PriceTransformer:
 
     def transform(
         self,
-        extracted_data: dict[str, list[AlphaVantageDailyBar]],
+        extracted_data: dict[str, list[YahooFinanceDailyBar]],
     ) -> list[StockPrice]:
         """Transform extracted API records into stock price models.
 

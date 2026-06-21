@@ -8,7 +8,7 @@ This application is responsible for the Python ETL workflow only. AWS deployment
 
 1. `src.main` loads environment-backed settings and configures logging.
 2. `src.utils.file_handler.read_tickers` reads `config/tickers.csv`.
-3. `src.api.alpha_vantage.AlphaVantageClient` fetches daily OHLCV data.
+3. `src.api.yahoo_finance.YahooFinanceClient` fetches daily OHLCV data.
 4. `src.validators.validator.StockPriceValidator` validates and converts API bars.
 5. `src.database.schema` ensures the DuckDB table exists.
 6. `src.database.upsert` writes records using `(ticker, date)` UPSERT semantics.
@@ -17,12 +17,15 @@ This application is responsible for the Python ETL workflow only. AWS deployment
 ## Design Decisions
 
 - Tickers are static CSV configuration so index membership can be updated without code changes.
-- The API client returns typed daily bars and does not expose raw Alpha Vantage payloads.
+- Yahoo Finance is the only market data source for Version 1.
+- Yahoo Finance was selected because it requires no API key, reduces runtime
+  configuration, and supports bulk NASDAQ-100 downloads through `yfinance`.
+- The API client returns typed daily bars and does not expose raw dataframes outside the API layer.
 - Invalid records are logged and skipped; ticker-level extraction failures are isolated.
 - DuckDB writes are idempotent through a primary key on `(ticker, date)`.
 - Required environment variables are validated at startup to fail fast on deployment misconfiguration.
 - DuckDB is the master data store and single source of truth.
-- CSV exports are generated from DuckDB, never directly from Alpha Vantage API responses.
+- CSV exports are generated from DuckDB, never directly from market data download results.
 
 ## Database
 

@@ -11,12 +11,12 @@ MarketVault
 ------------------
 
 MarketVault is a Python ETL project that collects daily OHLCV stock price data
-for NASDAQ-100 companies from the Alpha Vantage API, validates and transforms
-the data, stores it in DuckDB, and prepares database and CSV artifacts for
-upload to Amazon S3.
+for NASDAQ-100 companies from Yahoo Finance, validates and transforms the data,
+stores it in DuckDB, and prepares database and CSV artifacts for upload to
+Amazon S3.
 
 DuckDB is the local master data store and single source of truth. CSV exports
-are generated from DuckDB, not directly from Alpha Vantage API responses.
+are generated from DuckDB, not directly from downloaded market data.
 
 
 3. Tech Stack
@@ -28,8 +28,9 @@ Python
 DuckDB
   Local analytical database used as the master data store.
 
-Alpha Vantage API
-  External market data provider for daily OHLCV prices.
+Yahoo Finance
+  Market data source for daily OHLCV prices. The project uses the yfinance
+  package and does not require a market data API key.
 
 AWS Lambda
   Planned runtime environment for scheduled production execution.
@@ -47,7 +48,7 @@ SNS
   Planned notification service for failure alerts.
 
 Boto3
-  AWS SDK dependency available for future S3 upload integration.
+  AWS SDK planned for future S3 upload integration.
 
 
 4. Project Structure
@@ -60,7 +61,7 @@ src/
   Main Python application package.
 
 src/api/
-  Alpha Vantage API client and retry policy.
+  Yahoo Finance market data client.
 
 src/database/
   DuckDB connection management, schema creation, and UPSERT logic.
@@ -94,12 +95,12 @@ docs/
 5. ETL Workflow
 ---------------
 
-Alpha Vantage API
-  The pipeline requests daily OHLCV price data for configured tickers.
+Yahoo Finance
+  The pipeline downloads daily OHLCV price data for configured tickers.
 
 Extract
-  The API layer fetches data ticker by ticker. One failed ticker does not stop
-  the rest of the run.
+  The API layer downloads data efficiently for the configured ticker universe.
+  Yahoo Finance supports full NASDAQ-100 downloads without API key management.
 
 Validate
   API responses and individual records are checked for missing fields, invalid
@@ -173,7 +174,7 @@ Example:
 
 Rules:
   The CSV is generated from DuckDB.
-  The CSV is not generated directly from Alpha Vantage API responses.
+  The CSV is not generated directly from market data download results.
   The CSV is stored locally before upload to S3.
   Generated CSV files are ignored by Git.
 
@@ -223,18 +224,6 @@ Expected S3 layout:
 9. Environment Variables
 ------------------------
 
-ALPHA_VANTAGE_API_KEY
-  Alpha Vantage API key used for market data requests.
-
-ALPHA_VANTAGE_BASE_URL
-  Alpha Vantage REST API endpoint.
-
-ALPHA_VANTAGE_TIMEOUT_SECONDS
-  HTTP timeout in seconds for Alpha Vantage requests.
-
-ALPHA_VANTAGE_OUTPUT_SIZE
-  Alpha Vantage response size. Typical values are compact or full.
-
 AWS_REGION
   AWS region used by downstream AWS integrations.
 
@@ -280,7 +269,6 @@ Run the pipeline:
 
 Before running:
   Create a .env file from .env.example.
-  Set ALPHA_VANTAGE_API_KEY.
   Confirm DUCKDB_DATABASE_PATH points to data/marketvault.duckdb.
   Confirm TICKERS_FILE_PATH points to config/tickers.csv.
 

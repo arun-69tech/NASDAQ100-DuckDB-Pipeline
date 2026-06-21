@@ -1,10 +1,10 @@
 # MarketVault
 
-Production-oriented Python ETL pipeline for fetching daily OHLCV data for NASDAQ-100 constituents from Alpha Vantage and storing deduplicated records in DuckDB.
+Production-oriented Python ETL pipeline for fetching daily OHLCV data for NASDAQ-100 constituents from Yahoo Finance and storing deduplicated records in DuckDB.
 
 ## Features
 - Reads NASDAQ-100 tickers from `config/tickers.csv`
-- Fetches daily adjusted time series data from Alpha Vantage
+- Fetches daily OHLCV market data from Yahoo Finance with no API key required
 - Validates API-level and record-level data quality
 - Transforms records into typed Python domain objects
 - Uses DuckDB as the master data store and single source of truth
@@ -18,7 +18,8 @@ Production-oriented Python ETL pipeline for fetching daily OHLCV data for NASDAQ
 ## Requirements
 
 - Python 3.12
-- Alpha Vantage API key
+- DuckDB local database file
+- Internet access for Yahoo Finance downloads
 - DuckDB local database file
 
 ## Configuration
@@ -26,7 +27,6 @@ Production-oriented Python ETL pipeline for fetching daily OHLCV data for NASDAQ
 Create a `.env` file from `.env.example` and provide the required values:
 
 ```bash
-ALPHA_VANTAGE_API_KEY=your_alpha_vantage_api_key
 AWS_REGION=us-east-1
 S3_BUCKET=marketvault-data
 DUCKDB_DATABASE_PATH=data/marketvault.duckdb
@@ -36,7 +36,11 @@ DUCKDB_DATABASE_PATH=data/marketvault.duckdb
 
 ## Data Architecture
 
-DuckDB is the master data store. CSV exports must be generated from DuckDB, never directly from Alpha Vantage API responses.
+DuckDB is the master data store. CSV exports must be generated from DuckDB, never directly from market data download results.
+
+Yahoo Finance was selected for Version 1 because it removes API key management,
+simplifies configuration, and supports efficient bulk downloads for the full
+NASDAQ-100 universe through `yfinance`.
 
 Database path:
 
@@ -109,7 +113,7 @@ pytest
 
 ```text
 config/       Configuration, constants, ticker input
-src/api/      Alpha Vantage client and retry utilities
+src/api/      Yahoo Finance market data client
 src/database/ DuckDB connection, schema, and upsert logic
 src/models/   Domain models
 src/pipeline/ ETL orchestration

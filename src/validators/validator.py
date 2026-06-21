@@ -3,7 +3,7 @@
 from datetime import datetime, timezone
 from decimal import Decimal
 
-from src.api.alpha_vantage import AlphaVantageDailyBar
+from src.api.yahoo_finance import YahooFinanceDailyBar
 from src.models.stock_price import StockPrice
 from src.utils.helpers import parse_decimal, parse_int
 from src.utils.logger import get_logger
@@ -14,7 +14,7 @@ LOGGER = get_logger(__name__)
 class StockPriceValidator:
     """Validate and convert API daily bars into domain models."""
 
-    def validate(self, bar: AlphaVantageDailyBar) -> StockPrice | None:
+    def validate(self, bar: YahooFinanceDailyBar) -> StockPrice | None:
         """Validate an API daily bar.
 
         Parameters:

@@ -1,10 +1,10 @@
-"""Application entry point for the NASDAQ-100 DuckDB ETL pipeline."""
+"""Application entry point for the MarketVault ETL pipeline."""
 
 import logging
 import sys
 
 from config.settings import ConfigurationError, Settings
-from src.api.alpha_vantage import AlphaVantageClient
+from src.api.yahoo_finance import YahooFinanceClient
 from src.pipeline.extract import PriceExtractor
 from src.pipeline.load import PriceLoader
 from src.pipeline.pipeline import Nasdaq100Pipeline
@@ -25,23 +25,18 @@ def build_pipeline(settings: Settings) -> Nasdaq100Pipeline:
     Returns:
         Configured `Nasdaq100Pipeline` instance.
     """
-    alpha_vantage_client = AlphaVantageClient(
-        api_key=settings.alpha_vantage_api_key,
-        base_url=settings.alpha_vantage_base_url,
-        timeout_seconds=settings.alpha_vantage_timeout_seconds,
-        output_size=settings.alpha_vantage_output_size,
-    )
+    yahoo_finance_client = YahooFinanceClient()
 
     return Nasdaq100Pipeline(
         tickers_file_path=settings.tickers_file_path,
-        extractor=PriceExtractor(alpha_vantage_client),
+        extractor=PriceExtractor(yahoo_finance_client),
         transformer=PriceTransformer(StockPriceValidator()),
         loader=PriceLoader(settings.duckdb_database_path),
     )
 
 
 def main() -> int:
-    """Run the NASDAQ-100 DuckDB ETL pipeline.
+    """Run the MarketVault ETL pipeline.
 
     Returns:
         Process exit code. `0` indicates success; `1` indicates failure.
